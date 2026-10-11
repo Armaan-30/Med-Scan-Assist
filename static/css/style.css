@@ -299,6 +299,7 @@ h1, h2, h3, h4, h5, h6 {
 /* Sample Images Gallery */
 .sample-img-card {
     cursor: pointer;
+    font: inherit;
     border: 1px solid var(--border-color);
     border-radius: 6px;
     overflow: hidden;
@@ -317,10 +318,26 @@ h1, h2, h3, h4, h5, h6 {
     box-shadow: 0 0 0 2px rgba(0, 137, 123, 0.3);
 }
 
+.sample-image-viewer {
+    max-height: 82vh;
+    overflow: auto;
+    text-align: center;
+    background: #0f172a;
+}
+
+.sample-image-viewer img {
+    display: inline-block;
+    max-width: 100%;
+    max-height: 74vh;
+    object-fit: contain;
+    transform-origin: center;
+    transition: transform 0.15s ease;
+}
+
 .sample-img-thumb {
-    height: 90px;
+    height: 160px;
     width: 100%;
-    object-fit: cover;
+    object-fit: contain;
     background: #111;
 }
 
@@ -474,3 +491,4 @@ h1, h2, h3, h4, h5, h6 {
         max-height: 300px;
     }
 }
+
