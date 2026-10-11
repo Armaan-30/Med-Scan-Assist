@@ -52,7 +52,8 @@ CORS(app)
 os.makedirs(Config.UPLOADS_DIR, exist_ok=True)
 os.makedirs(os.path.join(Config.REPORTS_DIR, 'generated'), exist_ok=True)
 os.makedirs(os.path.join(Config.UPLOADS_DIR, 'gradcam'), exist_ok=True)
-os.makedirs(os.path.join('static', 'evaluation'), exist_ok=True)
+if os.environ.get('VERCEL', '').lower() != '1':
+    os.makedirs(os.path.join('static', 'evaluation'), exist_ok=True)
 
 # Initialize services
 model_loader = ModelLoader()
