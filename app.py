@@ -117,6 +117,12 @@ def about():
 @app.route('/api/health', methods=['GET'])
 def health_check():
     """Return application status, model availability, and device info."""
+    # Load the checkpoint on the first health check so the dashboard reports
+    # actual model readiness instead of marking a healthy, lazily initialized
+    # backend as offline.
+    if not model_loader.is_ready() and os.path.isfile(Config.BEST_MODEL_PATH):
+        get_prediction_service()
+
     model_info = model_loader.get_model_info()
     return jsonify({
         'status': 'online',
@@ -262,21 +268,25 @@ def get_metrics():
 
 @app.route('/api/sample-images', methods=['GET'])
 def get_sample_images():
-    """Return list of available sample/demo images."""
+    """Return the two curated clinical radiograph examples."""
     try:
         sample_dir = os.path.join('static', 'images', 'samples')
-        samples = []
-        if os.path.exists(sample_dir):
-            for f in sorted(os.listdir(sample_dir)):
-                if f.lower().endswith(('.jpg', '.jpeg', '.png')):
-                    samples.append({
-                        'filename': f,
-                        'url': f"/static/images/samples/{f}",
-                        'label': f.replace('_', ' ').rsplit('.', 1)[0].title()
-                    })
+        curated_samples = [
+            ('normal_chest_radiograph.png', 'X-ray Normal'),
+            ('pneumonia_chest_radiograph.png', 'X-ray Pneumonia'),
+        ]
+        samples = [
+            {
+                'filename': filename,
+                'url': f"/static/images/samples/{filename}",
+                'label': label,
+            }
+            for filename, label in curated_samples
+            if os.path.isfile(os.path.join(sample_dir, filename))
+        ]
         return jsonify({
             'samples': samples,
-            'note': 'These are non-sensitive demonstration images provided for testing.'
+            'note': 'Curated clinical examples for research demonstration only.'
         })
     except Exception as e:
         logger.error(f"Sample images error: {str(e)}")
@@ -400,3 +410,4 @@ if __name__ == '__main__':
         port=5000,
         debug=os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
     )
+
