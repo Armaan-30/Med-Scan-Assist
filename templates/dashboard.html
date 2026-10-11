@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | MedScan Assist</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="dashboard-body bg-light">
+    <!-- Top Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-navy sticky-top shadow-sm">
+        <div class="container-fluid px-lg-4">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+                <span class="med-cross-icon sm">
+                    <i class="bi bi-plus-lg"></i>
+                </span>
+                <span class="fw-bold tracking-wide">MedScan<span class="text-teal">Assist</span></span>
+                <span class="badge bg-teal-subtle text-teal-dark border border-teal-subtle ms-2 d-none d-sm-inline-block small">Prototype</span>
+            </a>
+
+            <!-- Status Badges in Navbar -->
+            <div class="d-flex align-items-center gap-2 ms-auto me-3 order-lg-last">
+                <div class="status-indicator-pill d-flex align-items-center gap-2 bg-navy-light px-3 py-1 rounded-pill" title="Backend Model Status">
+                    <span id="modelStatusDot" class="status-dot status-loading"></span>
+                    <span id="modelStatusText" class="small text-light fw-medium">Connecting...</span>
+                </div>
+                <div id="deviceBadge" class="badge bg-secondary-subtle text-light border border-secondary px-2 py-1 rounded-pill small">
+                    <i class="bi bi-cpu me-1"></i> <span id="deviceText">CPU</span>
+                </div>
+            </div>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#dashboardNavbar" aria-controls="dashboardNavbar" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="dashboardNavbar">
+                <ul class="nav nav-pills ms-lg-4 my-2 my-lg-0" id="mainTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active px-3 py-1" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload-pane" type="button" role="tab" aria-controls="upload-pane" aria-selected="true">
+                            <i class="bi bi-cloud-arrow-up me-1"></i> Screening & Analysis
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link px-3 py-1" id="evaluation-tab" data-bs-toggle="tab" data-bs-target="#evaluation-pane" type="button" role="tab" aria-controls="evaluation-pane" aria-selected="false">
+                            <i class="bi bi-bar-chart-line me-1"></i> Model Evaluation
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link px-3 py-1" id="about-tab" data-bs-toggle="tab" data-bs-target="#about-pane" type="button" role="tab" aria-controls="about-pane" aria-selected="false">
+                            <i class="bi bi-info-circle me-1"></i> Methodology & Limitations
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Global Medical Research Notice Banner -->
+    <aside class="disclaimer-banner border-bottom py-2 bg-warning-subtle text-dark small" aria-label="Medical Disclaimer">
+        <div class="container-fluid px-lg-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-shield-exclamation text-warning-dark flex-shrink-0"></i>
+                <span><strong>RESEARCH DEMONSTRATION &bull; NOT FOR CLINICAL DIAGNOSIS:</strong> Predictions & saliency maps are exploratory outputs for machine learning research.</span>
+            </div>
+            <a href="#about-pane" class="text-decoration-underline text-navy fw-medium small" onclick="document.getElementById('about-tab').click();">Read full safety disclosure &rarr;</a>
+        </div>
+    </aside>
+
+    <!-- Main Container Content with Tabs -->
+    <main class="container-fluid px-lg-4 py-4">
+        <!-- Toast Alerts Container -->
+        <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1080;">
+            <div id="liveToast" class="toast align-items-center border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body d-flex align-items-center gap-2">
+                        <i id="toastIcon" class="bi bi-info-circle fs-5"></i>
+                        <span id="toastMessage">Notification message</span>
+                    </div>
+                    <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="mainTabContent">
+            <!-- ========================================================================= -->
+            <!-- TAB 1: SCREENING & ANALYSIS (SECTIONS A & B) -->
+            <!-- ========================================================================= -->
+            <div class="tab-pane fade show active" id="upload-pane" role="tabpanel" aria-labelledby="upload-tab">
+                <!-- Section A: Upload & Image Selection Area -->
+                <section class="card shadow-sm border-0 mb-4" id="uploadSection">
+                    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-navy text-white rounded-pill px-2 py-1">Step 1</span>
+                            <h5 class="m-0 fw-bold text-navy">Input Chest Radiograph</h5>
+                        </div>
+                        <span class="text-muted small">
+                            <i class="bi bi-file-earmark-medical me-1"></i> Frontal PA/AP Projections (JPEG, PNG &bull; Max 10MB)
+                        </span>
+                    </div>
+
+                    <div class="card-body p-4">
+                        <div class="row g-4">
+                            <!-- Left: Upload Zone / Preview -->
+                            <div class="col-lg-7">
+                                <!-- Drag & Drop Dropzone -->
+                                <div id="dropzone" class="dropzone-box text-center p-4 rounded-3 d-flex flex-column align-items-center justify-content-center">
+                                    <input type="file" id="fileInput" class="d-none" accept="image/png, image/jpeg, image/jpg">
+                                    
+                                    <!-- Idle Dropzone Content -->
+                                    <div id="dropzoneIdle" class="py-4">
+                                        <div class="upload-icon-circle mx-auto mb-3">
+                                            <i class="bi bi-cloud-arrow-up text-navy fs-1"></i>
+                                        </div>
+                                        <h5 class="fw-bold text-navy mb-1">Drag &amp; drop chest X-ray image</h5>
+                                        <p class="text-muted small mb-3">or browse from your local files</p>
+                                        <button type="button" class="btn btn-outline-navy btn-sm px-4 rounded-pill" id="browseBtn">
+                                            <i class="bi bi-folder2-open me-1"></i> Browse Files
+                                        </button>
+                                        <div class="mt-3 text-muted x-small">
+                                            Supported: DICOM-exported JPEG, PNG &bull; Max size: 10MB
+                                        </div>
+                                    </div>
+
+                                    <!-- Selected Image Preview State -->
+                                    <div id="dropzonePreview" class="d-none w-100">
+                                        <div class="preview-wrapper position-relative mx-auto mb-3 text-center">
+                                            <img id="previewImage" src="" alt="Selected Radiograph Preview" class="img-fluid rounded-2 shadow-sm preview-thumbnail">
+                                        </div>
+                                        <div class="preview-metadata bg-white p-3 rounded-2 border text-start mb-3 mx-auto" style="max-width: 480px;">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <strong class="text-navy text-truncate d-inline-block" id="previewFileName" style="max-width: 320px;">image.jpeg</strong>
+                                                <span class="badge bg-light text-dark border" id="previewFileSize">-- KB</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between text-muted small">
+                                                <span>Resolution: <strong id="previewDimensions" class="text-dark">-- &times; --</strong></span>
+                                                <span>Format: <strong id="previewFileType" class="text-dark">--</strong></span>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex justify-content-center gap-2">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" id="replaceImageBtn">
+                                                <i class="bi bi-arrow-repeat me-1"></i> Replace Image
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" id="removeImageBtn">
+                                                <i class="bi bi-trash me-1"></i> Clear
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Action Buttons & Spinner Overlay -->
+                                <div class="mt-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+                                    <div class="small text-muted">
+                                        <i class="bi bi-shield-check text-teal me-1"></i> Client-side pre-validation enabled
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" id="analyzeBtn" class="btn btn-primary-navy px-4 py-2" disabled>
+                                            <i class="bi bi-search me-2"></i> Analyze Image
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right: Sample Image Selector -->
+                            <div class="col-lg-5">
+                                <div class="card bg-white border h-100">
+                                    <div class="card-header bg-light py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
+                                        <span class="fw-semibold text-navy small">
+                                            <i class="bi bi-images me-1 text-teal"></i> Preset Validation Samples
+                                        </span>
+                                        <span class="badge bg-secondary-subtle text-secondary small">Click to load</span>
+                                    </div>
+                                    <div class="card-body p-3">
+                                        <p class="text-muted small mb-3">
+                                            Test the neural network pipeline immediately with verified benchmark samples:
+                                        </p>
+                                        <div id="sampleImagesContainer" class="row g-2">
+                                            <!-- Dynamically populated or fallback samples -->
+                                            <div class="col-12 text-center text-muted py-3 small">
+                                                <div class="spinner-border spinner-border-sm text-teal mb-2" role="status"></div>
+                                                <div>Loading sample radiographs...</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card-footer bg-light py-2 text-muted x-small">
+                                        <i class="bi bi-info-circle me-1"></i> Samples reflect curated pediatric cohorts (Kaggle Pneumonia test dataset).
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Processing Overlay -->
+                    <div id="processingOverlay" class="processing-overlay d-none">
+                        <div class="processing-content text-center p-4 bg-white rounded-3 shadow-lg">
+                            <div class="spinner-border text-teal mb-3" style="width: 3.5rem; height: 3.5rem;" role="status">
+                                <span class="visually-hidden">Analyzing image...</span>
+                            </div>
+                            <h5 class="fw-bold text-navy mb-1">Evaluating Chest Radiograph</h5>
+                            <p class="text-muted small mb-2">Executing EfficientNet inference &amp; generating Grad-CAM activation map...</p>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-teal w-100"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ========================================================================= -->
+                <!-- Section B: Results Area (Hidden until analysis complete) -->
+                <!-- ========================================================================= -->
+                <section class="card shadow-sm border-0 d-none" id="resultsSection">
+                    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-teal text-white rounded-pill px-2 py-1">Step 2</span>
+                            <h5 class="m-0 fw-bold text-navy">Analysis &amp; Saliency Results</h5>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="resetAnalysisBtn">
+                                <i class="bi bi-plus-circle me-1"></i> Analyze New Image
+                            </button>
+                            <button type="button" class="btn btn-primary-navy btn-sm" id="downloadReportBtn">
+                                <i class="bi bi-file-earmark-arrow-down me-1"></i> Download Report
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card-body p-4">
+                        <div class="row g-4">
+                            <!-- LEFT COLUMN: Prediction & Probability Breakdown -->
+                            <div class="col-lg-5">
+                                <!-- Prediction Header Card (Neutral Colors, NO green/red bias) -->
+                                <div class="card border-0 bg-light p-3 rounded-3 mb-3 shadow-sm">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="text-muted text-uppercase fw-bold x-small tracking-wider">Model Classification</span>
+                                        <span class="badge bg-navy text-white px-2 py-1 small" id="resultTimestamp">Just now</span>
+                                    </div>
+                                    <div class="d-flex align-items-baseline gap-2 mb-2">
+                                        <h2 class="display-6 fw-bold text-navy mb-0" id="predictedClass">--</h2>
+                                        <span class="fs-5 text-secondary fw-semibold" id="predictedConfidence">--%</span>
+                                    </div>
+                                    <div class="progress mb-2" style="height: 10px;">
+                                        <div id="confidenceProgressBar" class="progress-bar bg-navy" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                    <div class="small text-muted d-flex justify-content-between">
+                                        <span>Softmax Confidence Score</span>
+                                        <span id="confidenceLabel" class="fw-semibold text-navy">--</span>
+                                    </div>
+                                </div>
+
+                                <!-- Human Review Warning Alert (Yellow/Amber) -->
+                                <div id="humanReviewWarning" class="alert alert-warning border-warning d-none py-2 px-3 mb-3 d-flex align-items-start gap-2" role="alert">
+                                    <i class="bi bi-exclamation-triangle-fill text-warning-dark fs-5 flex-shrink-0"></i>
+                                    <div class="small text-dark">
+                                        <strong>Needs Human Review:</strong> Model confidence falls in the uncertainty threshold (&lt;85%) or quality metrics indicated low dynamic range. Secondary review by a clinician is strongly advised.
+                                    </div>
+                                </div>
+
+                                <!-- Class Probability Distribution Bars -->
+                                <div class="card border bg-white p-3 rounded-3 mb-3">
+                                    <h6 class="fw-bold text-navy mb-3 small text-uppercase">Probability Breakdown</h6>
+                                    
+                                    <!-- Normal Probability -->
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between small mb-1">
+                                            <span class="fw-semibold text-secondary">
+                                                <i class="bi bi-circle-fill text-teal me-1 small"></i> Normal (Unremarkable)
+                                            </span>
+                                            <span class="fw-bold text-dark" id="probNormalVal">--%</span>
+                                        </div>
+                                        <div class="progress" style="height: 8px;">
+                                            <div id="probNormalBar" class="progress-bar bg-teal" role="progressbar" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Pneumonia Probability -->
+                                    <div>
+                                        <div class="d-flex justify-content-between small mb-1">
+                                            <span class="fw-semibold text-secondary">
+                                                <i class="bi bi-circle-fill text-navy me-1 small"></i> Pneumonia (Infiltrate / Opacity)
+                                            </span>
+                                            <span class="fw-bold text-dark" id="probPneumoniaVal">--%</span>
+                                        </div>
+                                        <div class="progress" style="height: 8px;">
+                                            <div id="probPneumoniaBar" class="progress-bar bg-navy" role="progressbar" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Collapsible Quality Checks Summary -->
+                                <div class="accordion" id="qualityAccordion">
+                                    <div class="accordion-item border rounded-3 overflow-hidden">
+                                        <h2 class="accordion-header" id="headingQuality">
+                                            <button class="accordion-button collapsed py-2 px-3 bg-light text-navy fw-semibold small" type="button" data-bs-toggle="collapse" data-bs-target="#collapseQuality" aria-expanded="false" aria-controls="collapseQuality">
+                                                <i class="bi bi-check2-all text-teal me-2"></i> Radiographic Quality Check Summary
+                                            </button>
+                                        </h2>
+                                        <div id="collapseQuality" class="accordion-collapse collapse" aria-labelledby="headingQuality" data-bs-parent="#qualityAccordion">
+                                            <div class="accordion-body p-3 bg-white small" id="qualityChecksList">
+                                                <!-- Dynamic quality checks inserted here -->
+                                                <div class="d-flex justify-content-between py-1 border-bottom">
+                                                    <span class="text-muted">Resolution &amp; Aspect Ratio:</span>
+                                                    <span class="fw-semibold text-success"><i class="bi bi-check-circle me-1"></i> Pass</span>
+                                                </div>
+                                                <div class="d-flex justify-content-between py-1 border-bottom">
+                                                    <span class="text-muted">Dynamic Range &amp; Contrast:</span>
+                                                    <span class="fw-semibold text-success"><i class="bi bi-check-circle me-1"></i> Adequate</span>
+                                                </div>
+                                                <div class="d-flex justify-content-between py-1">
+                                                    <span class="text-muted">Blur / Sharpness Metric:</span>
+                                                    <span class="fw-semibold text-success"><i class="bi bi-check-circle me-1"></i> Sufficient</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- RIGHT COLUMN: Visualizations (Original, Grad-CAM, Side-by-Side) -->
+                            <div class="col-lg-7">
+                                <div class="card border bg-white h-100 d-flex flex-column">
+                                    <!-- Image Tabs -->
+                                    <div class="card-header bg-light border-bottom p-2">
+                                        <ul class="nav nav-pills nav-fill" id="imageTabs" role="tablist">
+                                            <li class="nav-item" role="presentation">
+                                                <button class="nav-link active py-1 px-3 small" id="tab-sidebyside" data-bs-toggle="pill" data-bs-target="#view-sidebyside" type="button" role="tab">
+                                                    <i class="bi bi-columns me-1"></i> Side by Side
+                                                </button>
+                                            </li>
+                                            <li class="nav-item" role="presentation">
+                                                <button class="nav-link py-1 px-3 small" id="tab-gradcam" data-bs-toggle="pill" data-bs-target="#view-gradcam" type="button" role="tab">
+                                                    <i class="bi bi-fire me-1"></i> Grad-CAM Heatmap
+                                                </button>
+                                            </li>
+                                            <li class="nav-item" role="presentation">
+                                                <button class="nav-link py-1 px-3 small" id="tab-original" data-bs-toggle="pill" data-bs-target="#view-original" type="button" role="tab">
+                                                    <i class="bi bi-image me-1"></i> Original
+                                                </button>
+                                            </li>
+                                        </ul>
+                                    </div>
+
+                                    <!-- Image Views Tab Content -->
+                                    <div class="card-body p-3 flex-grow-1 d-flex flex-column justify-content-center">
+                                        <div class="tab-content" id="imageTabsContent">
+                                            <!-- View 1: Side by Side -->
+                                            <div class="tab-pane fade show active" id="view-sidebyside" role="tabpanel">
+                                                <div class="row g-2 align-items-center">
+                                                    <div class="col-6 text-center">
+                                                        <span class="badge bg-secondary mb-1 x-small">Original Radiograph</span>
+                                                        <div class="img-container border rounded bg-black">
+                                                            <img id="resImgOriginalSide" src="" alt="Original Radiograph" class="img-fluid result-img">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-6 text-center">
+                                                        <span class="badge bg-teal mb-1 x-small">Grad-CAM Overlay</span>
+                                                        <div class="img-container border rounded bg-black">
+                                                            <img id="resImgGradcamSide" src="" alt="Grad-CAM Saliency Overlay" class="img-fluid result-img">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- View 2: Grad-CAM Only -->
+                                            <div class="tab-pane fade text-center" id="view-gradcam" role="tabpanel">
+                                                <div class="img-container border rounded bg-black mx-auto" style="max-height: 420px;">
+                                                    <img id="resImgGradcamOnly" src="" alt="Grad-CAM Saliency Map" class="img-fluid result-img">
+                                                </div>
+                                            </div>
+
+                                            <!-- View 3: Original Only -->
+                                            <div class="tab-pane fade text-center" id="view-original" role="tabpanel">
+                                                <div class="img-container border rounded bg-black mx-auto" style="max-height: 420px;">
+                                                    <img id="resImgOriginalOnly" src="" alt="Original Radiograph" class="img-fluid result-img">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Grad-CAM Explanatory Disclaimer Footer -->
+                                    <div class="card-footer bg-light border-top py-2 px-3">
+                                        <div class="d-flex align-items-start gap-2">
+                                            <i class="bi bi-info-circle text-teal flex-shrink-0 mt-1"></i>
+                                            <div class="x-small text-muted">
+                                                <strong>Interpretability Note:</strong> Gradient-weighted Class Activation Mapping (Grad-CAM) highlights image regions that contributed highest feature weight to the final classification layer. Warmer hues (red/yellow) indicate elevated activation intensity. Grad-CAM does not demarcate anatomical lesion margins.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SECTION: Clinical Explanation, Precautions & Emergency Protocols -->
+                        <div class="row mt-4" id="clinicalGuidanceSection">
+                            <div class="col-12">
+                                <div class="card border-0 shadow-sm rounded-3 overflow-hidden" id="guidanceCard">
+                                    <div class="card-header py-3 px-4 d-flex justify-content-between align-items-center" id="guidanceCardHeader">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="bi bi-shield-exclamation fs-4" id="guidanceHeaderIcon"></i>
+                                            <h5 class="m-0 fw-bold" id="guidanceHeaderTitle">AI Radiographic Finding &amp; Clinical Guidance</h5>
+                                        </div>
+                                        <span class="badge rounded-pill px-3 py-1 text-uppercase fw-bold" id="guidanceBadge">Triage Level</span>
+                                    </div>
+                                    <div class="card-body p-4">
+                                        <!-- Finding Summary -->
+                                        <div class="alert alert-light border mb-4 p-3 rounded-3" id="guidanceSummaryBox">
+                                            <div class="fw-bold mb-1 text-navy"><i class="bi bi-eye me-2 text-teal"></i> Radiological Impression Summary:</div>
+                                            <div class="text-secondary small" id="guidanceSummaryText">Analyzing findings...</div>
+                                        </div>
+
+                                        <div class="row g-4">
+                                            <!-- Column 1: Radiological Visual Findings -->
+                                            <div class="col-md-4">
+                                                <div class="p-3 bg-light rounded-3 h-100 border">
+                                                    <h6 class="fw-bold text-navy mb-3 d-flex align-items-center">
+                                                        <i class="bi bi-diagram-3-fill text-primary me-2"></i> Observed Patterns
+                                                    </h6>
+                                                    <ul class="text-muted small ps-3 mb-0" id="guidanceFindingsList">
+                                                        <li>Radiological feature analysis details...</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+
+                                            <!-- Column 2: Recommended Precautions -->
+                                            <div class="col-md-4">
+                                                <div class="p-3 bg-light rounded-3 h-100 border">
+                                                    <h6 class="fw-bold text-navy mb-3 d-flex align-items-center">
+                                                        <i class="bi bi-clipboard2-pulse-fill text-teal me-2"></i> Immediate Precautions
+                                                    </h6>
+                                                    <ul class="text-muted small ps-3 mb-0" id="guidancePrecautionsList">
+                                                        <li>Care and isolation precautions...</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+
+                                            <!-- Column 3: Emergency Red Flags -->
+                                            <div class="col-md-4">
+                                                <div class="p-3 rounded-3 h-100 border border-danger-subtle bg-danger-subtle">
+                                                    <h6 class="fw-bold text-danger mb-3 d-flex align-items-center">
+                                                        <i class="bi bi-exclamation-octagon-fill me-2"></i> Emergency Red Flags
+                                                    </h6>
+                                                    <ul class="text-danger-emphasis small ps-3 mb-0" id="guidanceRedFlagsList">
+                                                        <li>Severe symptoms requiring urgent care...</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Action Banner -->
+                                        <div class="mt-4 p-3 rounded-3 border d-flex align-items-center gap-3" id="guidanceActionBanner">
+                                            <i class="bi bi-telephone-plus-fill fs-2 text-danger flex-shrink-0"></i>
+                                            <div>
+                                                <div class="fw-bold text-navy small text-uppercase tracking-wider">Action Protocol:</div>
+                                                <div class="small fw-semibold text-danger" id="guidanceActionText">
+                                                    Seek qualified medical evaluation for confirmation.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- ========================================================================= -->
+            <!-- TAB 2: MODEL EVALUATION (SECTION C) -->
+            <!-- ========================================================================= -->
+            <div class="tab-pane fade" id="evaluation-pane" role="tabpanel" aria-labelledby="evaluation-tab">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div>
+                            <h5 class="fw-bold text-navy m-0">Independent Validation Metrics</h5>
+                            <span class="text-muted small">Quantitative performance benchmarks on unseen test cohort</span>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-navy" id="refreshMetricsBtn">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Refresh Metrics
+                        </button>
+                    </div>
+
+                    <div class="card-body p-4">
+                        <!-- Alert when metrics not yet computed -->
+                        <div id="metricsEmptyNotice" class="d-none alert alert-info border-info text-center py-5">
+                            <i class="bi bi-clipboard2-data fs-1 text-teal d-block mb-2"></i>
+                            <h5 class="fw-bold text-navy">Evaluation Metrics Not Available</h5>
+                            <p class="text-muted small mb-3">
+                                Independent test set evaluation has not been logged yet. Run the evaluation script (`python evaluate.py` or training pipeline) to record metrics and generate performance curves.
+                            </p>
+                            <span class="badge bg-light text-dark border">Endpoint: /api/metrics</span>
+                        </div>
+
+                        <!-- Metrics Display Container -->
+                        <div id="metricsContent" class="d-none">
+                            <!-- 5 Key Metric Cards -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-6 col-md">
+                                    <div class="metric-card card border-0 bg-light p-3 text-center rounded-3 shadow-sm">
+                                        <span class="text-muted text-uppercase fw-semibold x-small">Accuracy</span>
+                                        <h3 class="fw-bold text-navy my-1" id="metricAccuracy">--</h3>
+                                        <span class="text-muted x-small">Overall Test Set</span>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md">
+                                    <div class="metric-card card border-0 bg-light p-3 text-center rounded-3 shadow-sm">
+                                        <span class="text-muted text-uppercase fw-semibold x-small">Sensitivity (Recall)</span>
+                                        <h3 class="fw-bold text-teal my-1" id="metricSensitivity">--</h3>
+                                        <span class="text-muted x-small">Pneumonia Detection</span>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md">
+                                    <div class="metric-card card border-0 bg-light p-3 text-center rounded-3 shadow-sm">
+                                        <span class="text-muted text-uppercase fw-semibold x-small">Specificity</span>
+                                        <h3 class="fw-bold text-navy my-1" id="metricSpecificity">--</h3>
+                                        <span class="text-muted x-small">True Negative Rate</span>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md">
+                                    <div class="metric-card card border-0 bg-light p-3 text-center rounded-3 shadow-sm">
+                                        <span class="text-muted text-uppercase fw-semibold x-small">F1-Score</span>
+                                        <h3 class="fw-bold text-navy my-1" id="metricF1">--</h3>
+                                        <span class="text-muted x-small">Harmonic Mean</span>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md">
+                                    <div class="metric-card card border-0 bg-light p-3 text-center rounded-3 shadow-sm">
+                                        <span class="text-muted text-uppercase fw-semibold x-small">ROC AUC</span>
+                                        <h3 class="fw-bold text-teal my-1" id="metricAUC">--</h3>
+                                        <span class="text-muted x-small">Discriminative Power</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Visual Charts: Confusion Matrix & ROC Curve -->
+                            <div class="row g-4 mb-4">
+                                <!-- Confusion Matrix Card -->
+                                <div class="col-lg-6">
+                                    <div class="card border h-100">
+                                        <div class="card-header bg-light py-2 px-3 fw-semibold text-navy small d-flex justify-content-between align-items-center">
+                                            <span><i class="bi bi-grid-3x3 me-1"></i> Confusion Matrix (Test Set)</span>
+                                            <span class="badge bg-white text-secondary border" id="testSetTotalBadge">N = --</span>
+                                        </div>
+                                        <div class="card-body p-3 d-flex flex-column align-items-center justify-content-center">
+                                            <div id="confusionMatrixTableContainer" class="w-100">
+                                                <!-- Dynamic Confusion Matrix Table -->
+                                                <table class="table table-bordered text-center align-middle mb-0 confusion-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th colspan="2" rowspan="2" class="bg-light"></th>
+                                                            <th colspan="2" class="bg-light text-navy fw-bold small">Predicted Class</th>
+                                                        </tr>
+                                                        <tr>
+                                                            <th class="bg-light text-muted small">Normal</th>
+                                                            <th class="bg-light text-muted small">Pneumonia</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <th rowspan="2" class="bg-light text-navy fw-bold small text-nowrap align-middle" style="writing-mode: vertical-rl; transform: rotate(180deg);">Actual</th>
+                                                            <th class="bg-light text-muted small">Normal</th>
+                                                            <td id="cmTN" class="cm-cell cm-tn p-3 fw-bold">--</td>
+                                                            <td id="cmFP" class="cm-cell cm-fp p-3 fw-bold">--</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <th class="bg-light text-muted small">Pneumonia</th>
+                                                            <td id="cmFN" class="cm-cell cm-fn p-3 fw-bold">--</td>
+                                                            <td id="cmTP" class="cm-cell cm-tp p-3 fw-bold">--</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            <div class="text-muted x-small mt-2 text-center">
+                                                TN: True Negatives | FP: False Positives | FN: False Negatives | TP: True Positives
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- ROC Curve / Performance Charts -->
+                                <div class="col-lg-6">
+                                    <div class="card border h-100">
+                                        <div class="card-header bg-light py-2 px-3 fw-semibold text-navy small">
+                                            <i class="bi bi-graph-up me-1"></i> Receiver Operating Characteristic (ROC)
+                                        </div>
+                                        <div class="card-body p-3 text-center d-flex flex-column align-items-center justify-content-center">
+                                            <div id="rocChartWrapper" class="w-100" style="max-height: 280px;">
+                                                <img id="rocCurveImg" src="/static/evaluation/roc_curve.png" alt="ROC Curve" class="img-fluid rounded border d-none" onerror="this.classList.add('d-none'); document.getElementById('rocCanvasWrapper').classList.remove('d-none');">
+                                                <div id="rocCanvasWrapper" class="w-100">
+                                                    <canvas id="rocChartCanvas" style="max-height: 260px;"></canvas>
+                                                </div>
+                                            </div>
+                                            <span class="x-small text-muted mt-2">Area Under ROC (AUC) reflects binary discrimination sensitivity vs. 1 - specificity.</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Additional Training Graphs (if available) -->
+                            <div class="row g-4 mb-3">
+                                <div class="col-12">
+                                    <div class="card border">
+                                        <div class="card-header bg-light py-2 px-3 fw-semibold text-navy small">
+                                            <i class="bi bi-activity me-1"></i> Training &amp; Validation Loss / Metric Curves
+                                        </div>
+                                        <div class="card-body p-3 text-center">
+                                            <img id="trainingCurvesImg" src="/static/evaluation/training_curves.png" alt="Training Convergence Curves" class="img-fluid rounded border d-none" onerror="this.classList.add('d-none'); document.getElementById('curvesPlaceholder').classList.remove('d-none');">
+                                            <div id="curvesPlaceholder" class="p-4 text-muted small bg-light rounded">
+                                                <i class="bi bi-image me-1"></i> Training convergence curve artifact available at <code>/static/evaluation/training_curves.png</code> upon pipeline execution.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <!-- SECTION: Pneumonia Subtypes & Radiological Atlas (4 Reference Panels) -->
+                            <div class="row g-4 mb-3">
+                                <div class="col-12">
+                                    <div class="card border shadow-sm rounded-3">
+                                        <div class="card-header bg-navy text-white py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <i class="bi bi-journal-medical fs-4 text-teal"></i>
+                                                <div>
+                                                    <h6 class="m-0 fw-bold text-white">Radiological Reference Atlas: Pneumonia Subtypes &amp; Manifestations</h6>
+                                                    <small class="text-white-50">Visual radiomic features across Normal, Bacterial, Viral, and COVID-19 Presentations</small>
+                                                </div>
+                                            </div>
+                                            <span class="badge bg-teal text-white px-3 py-1">Educational Guide</span>
+                                        </div>
+                                        <div class="card-body p-4 bg-light">
+                                            <p class="text-muted small mb-4">
+                                                Chest radiography interpretation hinges on recognizing changes in lung opacity, vascular margins, and lobar borders. Below are 4 benchmark reference cases illustrating distinct clinical presentations:
+                                            </p>
+                                            
+                                            <div class="row g-4">
+                                                <!-- Panel (a): Normal -->
+                                                <div class="col-md-6 col-lg-3">
+                                                    <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden bg-white">
+                                                        <div class="bg-black text-center p-2">
+                                                            <img src="/static/images/educational/type_normal.png" alt="Normal Radiograph" class="img-fluid rounded" style="max-height: 220px; object-fit: contain;">
+                                                        </div>
+                                                        <div class="card-body p-3">
+                                                            <span class="badge bg-primary-subtle text-primary fw-bold mb-2">Panel (a) &bull; Normal Chest</span>
+                                                            <h6 class="fw-bold text-navy mb-2">Clear Lung Fields</h6>
+                                                            <ul class="text-muted x-small ps-3 mb-3">
+                                                                <li>Homogeneous bilateral radiolucency (darkness) indicating fully aerated alveoli.</li>
+                                                                <li>Sharp, crisp costophrenic and cardiophrenic angles.</li>
+                                                                <li>No signs of pleural fluid effusion or consolidation.</li>
+                                                            </ul>
+                                                            <button type="button" class="btn btn-sm btn-outline-primary w-100 x-small" onclick="loadEducationalSample('/static/images/educational/type_normal.png', 'Panel (a) Normal Baseline')">
+                                                                <i class="bi bi-box-arrow-in-up-right me-1"></i> Analyze in Scanner
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Panel (b): Bacterial Pneumonia -->
+                                                <div class="col-md-6 col-lg-3">
+                                                    <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden bg-white">
+                                                        <div class="bg-black text-center p-2">
+                                                            <img src="/static/images/educational/type_bacterial.png" alt="Bacterial Pneumonia" class="img-fluid rounded" style="max-height: 220px; object-fit: contain;">
+                                                        </div>
+                                                        <div class="card-body p-3">
+                                                            <span class="badge bg-danger-subtle text-danger fw-bold mb-2">Panel (b) &bull; Bacterial</span>
+                                                            <h6 class="fw-bold text-navy mb-2">Lobar Consolidation</h6>
+                                                            <ul class="text-muted x-small ps-3 mb-3">
+                                                                <li>Dense focal alveolar opacification confined to an anatomical lobe.</li>
+                                                                <li>Air bronchograms visible as radiolucent branching tubes against white consolidation.</li>
+                                                                <li>Rapid onset with prominent neutrophilic inflammatory exudate.</li>
+                                                            </ul>
+                                                            <button type="button" class="btn btn-sm btn-outline-danger w-100 x-small" onclick="loadEducationalSample('/static/images/educational/type_bacterial.png', 'Panel (b) Bacterial Pneumonia')">
+                                                                <i class="bi bi-box-arrow-in-up-right me-1"></i> Analyze in Scanner
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Panel (c): Viral Pneumonia -->
+                                                <div class="col-md-6 col-lg-3">
+                                                    <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden bg-white">
+                                                        <div class="bg-black text-center p-2">
+                                                            <img src="/static/images/educational/type_viral.png" alt="Viral Pneumonia" class="img-fluid rounded" style="max-height: 220px; object-fit: contain;">
+                                                        </div>
+                                                        <div class="card-body p-3">
+                                                            <span class="badge bg-warning-subtle text-warning-emphasis fw-bold mb-2">Panel (c) &bull; Viral</span>
+                                                            <h6 class="fw-bold text-navy mb-2">Diffuse Interstitial Haze</h6>
+                                                            <ul class="text-muted x-small ps-3 mb-3">
+                                                                <li>Bilateral, diffuse interstitial infiltrates radiating from hila.</li>
+                                                                <li>Reticular or peribronchial cuffing without dense localized consolidation.</li>
+                                                                <li>Common in RSV, Influenza, and Rhinovirus pediatric cases.</li>
+                                                            </ul>
+                                                            <button type="button" class="btn btn-sm btn-outline-warning w-100 x-small" onclick="loadEducationalSample('/static/images/educational/type_viral.png', 'Panel (c) Viral Pneumonia')">
+                                                                <i class="bi bi-box-arrow-in-up-right me-1"></i> Analyze in Scanner
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Panel (d): COVID-19 Pneumonia -->
+                                                <div class="col-md-6 col-lg-3">
+                                                    <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden bg-white">
+                                                        <div class="bg-black text-center p-2">
+                                                            <img src="/static/images/educational/type_covid.png" alt="COVID-19 Pneumonia" class="img-fluid rounded" style="max-height: 220px; object-fit: contain;">
+                                                        </div>
+                                                        <div class="card-body p-3">
+                                                            <span class="badge bg-purple-subtle text-purple fw-bold mb-2" style="background-color: #f3e8ff; color: #7e22ce;">Panel (d) &bull; COVID-19</span>
+                                                            <h6 class="fw-bold text-navy mb-2">Ground-Glass Opacities</h6>
+                                                            <ul class="text-muted x-small ps-3 mb-3">
+                                                                <li>Multifocal bilateral peripheral and subpleural ground-glass opacities (GGO).</li>
+                                                                <li>Prominent lower lobe and posterior distribution.</li>
+                                                                <li>May progress to 'crazy paving' and diffuse consolidation in severe ARDS.</li>
+                                                            </ul>
+                                                            <button type="button" class="btn btn-sm btn-outline-secondary w-100 x-small" onclick="loadEducationalSample('/static/images/educational/type_covid.png', 'Panel (d) COVID-19 Pneumonia')">
+                                                                <i class="bi bi-box-arrow-in-up-right me-1"></i> Analyze in Scanner
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================================================= -->
+            <!-- TAB 3: ABOUT, METHODOLOGY & LIMITATIONS (SECTION D) -->
+            <!-- ========================================================================= -->
+            <div class="tab-pane fade" id="about-pane" role="tabpanel" aria-labelledby="about-tab">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h5 class="fw-bold text-navy m-0">Methodology, Clinical Limitations &amp; Ethical Considerations</h5>
+                    </div>
+
+                    <div class="card-body p-4">
+                        <div class="row g-4">
+                            <div class="col-lg-8">
+                                <!-- Research Use Purpose -->
+                                <div class="mb-4">
+                                    <h6 class="fw-bold text-navy border-start border-4 border-primary ps-2 mb-2">1. Research Purpose &amp; Scope</h6>
+                                    <p class="text-muted small">
+                                        MedScan Assist is an open engineering prototype created to study the interpretability of convolutional neural network feature maps on medical imaging modalities. The objective is to demonstrate how Grad-CAM saliency heatmaps can provide visual feedback alongside probabilistic predictions, enabling engineers to debug false positives, confounding artifacts, and out-of-distribution shifts.
+                                    </p>
+                                </div>
+
+                                <!-- Model Architecture -->
+                                <div class="mb-4">
+                                    <h6 class="fw-bold text-navy border-start border-4 border-teal ps-2 mb-2">2. Deep Learning Architecture</h6>
+                                    <p class="text-muted small">
+                                        The model utilizes an <strong>EfficientNet-B0</strong> convolutional backbone pre-trained on ImageNet-1k, adapted with transfer learning:
+                                    </p>
+                                    <ul class="text-muted small">
+                                        <li>Adaptive global average pooling with dropout (p=0.2) to prevent overfitting on radiographic patterns.</li>
+                                        <li>Binary classification head generating normalized logit probabilities via Sigmoid / Softmax.</li>
+                                        <li>Standardized preprocessing: image normalization using ImageNet channel statistics, resizing to 224&times;224, and adaptive contrast enhancement.</li>
+                                    </ul>
+                                </div>
+
+                                <!-- Training Dataset Source -->
+                                <div class="mb-4">
+                                    <h6 class="fw-bold text-navy border-start border-4 border-primary ps-2 mb-2">3. Dataset Provenance</h6>
+                                    <p class="text-muted small">
+                                        Trained using the benchmark Kaggle Chest X-Ray Images (Pneumonia) dataset, originally collected from pediatric patients aged one to five years old at Guangzhou Women and Children's Medical Center.
+                                    </p>
+                                </div>
+
+                                <!-- Critical Model Limitations -->
+                                <div class="mb-4">
+                                    <h6 class="fw-bold text-warning-dark border-start border-4 border-warning ps-2 mb-2">4. Known Clinical &amp; Technical Limitations</h6>
+                                    <div class="alert alert-warning border-warning bg-warning-subtle small mb-3">
+                                        <strong>Domain Shift &amp; Demographic Bias:</strong> Because training data consists of pediatric cohorts from a single geographic institution, the model may exhibit substantial distribution shift when evaluated on adult patients, geriatric populations, or scans from differing digital radiography equipment.
+                                    </div>
+                                    <ul class="text-muted small">
+                                        <li><strong>Lateral Views Unsupported:</strong> Model expects strictly Anteroposterior (AP) or Posteroanterior (PA) frontal projections.</li>
+                                        <li><strong>Comorbidity Confounders:</strong> The system cannot differentiate between viral vs. bacterial etiologies reliably, nor does it distinguish pneumonia from pulmonary edema, atelectasis, pleural effusion, or pneumothorax without multi-label supervision.</li>
+                                        <li><strong>Grad-CAM Granularity:</strong> Saliency maps highlight coarse activation regions, not micro-pathological margins. High activation does not confirm lesion pathology.</li>
+                                    </ul>
+                                </div>
+
+                                <!-- Data Privacy & Ethics -->
+                                <div class="mb-4">
+                                    <h6 class="fw-bold text-navy border-start border-4 border-teal ps-2 mb-2">5. Data Privacy &amp; Anonymization</h6>
+                                    <p class="text-muted small">
+                                        All image uploads are processed ephemerally for the duration of inference. The research demo does not persist Protected Health Information (PHI) or personal patient identifiers. Users are strictly instructed to submit only de-identified, anonymized research data.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Right Column: Institutional Disclaimer Card -->
+                            <div class="col-lg-4">
+                                <div class="card bg-light border p-3 rounded-3 shadow-sm mb-3">
+                                    <h6 class="fw-bold text-navy mb-2"><i class="bi bi-heart-pulse text-danger me-1"></i> Medical Supervision Notice</h6>
+                                    <p class="text-muted x-small mb-3">
+                                        Under no circumstances should the outputs of this tool be used for self-diagnosis, clinical prescription, patient triage, or direct care management.
+                                    </p>
+                                    <div class="p-2 bg-white rounded border text-muted x-small">
+                                        "Artificial intelligence algorithms in radiology are supportive decision-aid benchmarks and must always remain subservient to certified human medical oversight."
+                                    </div>
+                                </div>
+
+                                <div class="card bg-white border p-3 rounded-3 shadow-sm">
+                                    <h6 class="fw-bold text-navy mb-2"><i class="bi bi-shield-lock text-teal me-1"></i> Regulatory Status</h6>
+                                    <ul class="list-unstyled text-muted x-small mb-0">
+                                        <li class="mb-2"><i class="bi bi-x-circle text-danger me-1"></i> <strong>FDA 510(k):</strong> Not Approved</li>
+                                        <li class="mb-2"><i class="bi bi-x-circle text-danger me-1"></i> <strong>CE Mark / MDR:</strong> Not Certified</li>
+                                        <li><i class="bi bi-check-circle text-teal me-1"></i> <strong>Research Protocol:</strong> Educational ML Only</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer bg-white text-muted py-3 border-top mt-auto">
+        <div class="container-fluid px-lg-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span class="x-small">&copy; 2026 MedScan Assist Research Consortium &bull; EfficientNet-B0 Saliency Prototype</span>
+            <span class="x-small">Strictly for non-clinical educational and interpretability research.</span>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Frontend Application JavaScript -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

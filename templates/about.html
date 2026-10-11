@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About & Limitations | MedScan Assist</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="bg-light">
+    <!-- Top Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-navy shadow-sm">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+                <span class="med-cross-icon sm"><i class="bi bi-plus-lg"></i></span>
+                <span class="fw-bold tracking-wide">MedScan<span class="text-teal">Assist</span></span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navContent">
+                <ul class="navbar-nav ms-auto align-items-center gap-3">
+                    <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/dashboard">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/about">About & Limitations</a></li>
+                    <li class="nav-item">
+                        <a class="btn btn-teal btn-sm px-3" href="/dashboard">
+                            <i class="bi bi-cpu me-1"></i> Launch Demo
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Global Medical Research Notice Banner -->
+    <div class="disclaimer-banner border-bottom py-2 bg-warning-subtle text-dark small">
+        <div class="container text-center">
+            <i class="bi bi-shield-exclamation text-warning-dark me-1"></i>
+            <strong>RESEARCH PROTOTYPE ONLY &mdash; NOT FOR DIAGNOSTIC USE:</strong> All predictions and activation maps are investigational machine learning outputs.
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-9">
+                <!-- Page Title Header -->
+                <div class="mb-5 text-center">
+                    <span class="badge bg-teal-subtle text-teal-dark border border-teal-subtle px-3 py-2 rounded-pill mb-2 fw-semibold">
+                        System Documentation & Research Governance
+                    </span>
+                    <h1 class="display-6 fw-bold text-navy">About MedScan Assist</h1>
+                    <p class="text-secondary lead">
+                        Architecture, Dataset Provenance, Algorithmic Interpretability &amp; Clinical Safety Disclaimers
+                    </p>
+                </div>
+
+                <!-- Section 1: Research Purpose -->
+                <div class="card border-0 shadow-sm p-4 rounded-3 mb-4 bg-white">
+                    <h4 class="fw-bold text-navy mb-3"><i class="bi bi-bullseye text-teal me-2"></i> 1. Research Purpose</h4>
+                    <p class="text-muted">
+                        MedScan Assist was engineered as an open, reproducible medical machine learning benchmark prototype. The project investigates how modern transfer learning models perform when tasked with chest radiography triage and how visual interpretability tools like <strong>Gradient-weighted Class Activation Mapping (Grad-CAM)</strong> can help engineers inspect decision boundaries.
+                    </p>
+                    <p class="text-muted mb-0">
+                        Modern computer vision models often achieve high statistical accuracy on public benchmarks while inadvertently relying on spurious background shortcuts (such as hospital tokens, patient orientation markers, or chest tube artifacts). By synthesizing probabilistic predictions, image quality metrics, and spatial saliency heatmaps, this interface enables human-in-the-loop inspection.
+                    </p>
+                </div>
+
+                <!-- Section 2: Model Architecture -->
+                <div class="card border-0 shadow-sm p-4 rounded-3 mb-4 bg-white">
+                    <h4 class="fw-bold text-navy mb-3"><i class="bi bi-diagram-3 text-teal me-2"></i> 2. Deep Learning Architecture &amp; Training</h4>
+                    <p class="text-muted">
+                        The underlying classification backbone is built on <strong>EfficientNet-B0</strong>, chosen for its compound scaling coefficient that balances parameter efficiency and feature extraction fidelity:
+                    </p>
+                    <ul class="text-muted mb-3">
+                        <li><strong>Feature Extraction:</strong> Depthwise separable convolutions pre-trained on ImageNet-1k, fine-tuned on pulmonary radiographic patterns.</li>
+                        <li><strong>Regularization:</strong> Dropout rate of 0.2 prior to the linear classification layer to mitigate memorization.</li>
+                        <li><strong>Input Pipeline:</strong> Standardized 224&times;224 resolution with three-channel normalization matching ImageNet distributions.</li>
+                        <li><strong>Interpretability Layer:</strong> Grad-CAM gradients tapped from the final convolutional block (e.g. <code>features[-1]</code>) prior to global average pooling.</li>
+                    </ul>
+                </div>
+
+                <!-- Section 3: Dataset Source -->
+                <div class="card border-0 shadow-sm p-4 rounded-3 mb-4 bg-white">
+                    <h4 class="fw-bold text-navy mb-3"><i class="bi bi-database text-teal me-2"></i> 3. Dataset Provenance</h4>
+                    <p class="text-muted">
+                        The baseline model is trained and validated on the <em>Kaggle Chest X-Ray Images (Pneumonia)</em> repository, consisting of pediatric chest radiographs collected at the Guangzhou Women and Children’s Medical Center.
+                    </p>
+                    <div class="p-3 bg-light rounded-2 border small text-muted">
+                        <strong>Cohort Profile:</strong> Pediatric patients aged 1 to 5 years old. Ground-truth labels were established by initial radiologist evaluations and further quality-checked by senior clinical graders.
+                    </div>
+                </div>
+
+                <!-- Section 4: Critical Model Limitations -->
+                <div class="card border-0 shadow-sm p-4 rounded-3 mb-4 bg-white">
+                    <h4 class="fw-bold text-warning-dark mb-3"><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i> 4. Important Clinical &amp; Technical Limitations</h4>
+                    <div class="alert alert-warning border-warning bg-warning-subtle text-dark small mb-3">
+                        <strong>Do not use in medical facilities:</strong> This system is not cleared by FDA, CE, or health authorities for diagnostic, screening, or treatment selection purposes.
+                    </div>
+                    <ul class="text-muted small mb-0">
+                        <li class="mb-2"><strong>Demographic Generalization:</strong> Performance on adult or geriatric cohorts is unverified and likely subject to severe demographic distribution shift.</li>
+                        <li class="mb-2"><strong>Projection Specificity:</strong> The pipeline is restricted to frontal chest radiographs (Anteroposterior / Posteroanterior). Lateral or oblique projections will yield invalid predictions.</li>
+                        <li class="mb-2"><strong>Comorbidities &amp; Confounding Pathologies:</strong> The model operates on a binary classification regime (Normal vs. Pneumonia) and does not reliably distinguish other thoracic diseases (e.g., COVID-19, tuberculosis, pneumothorax, pulmonary nodules, cardiomegaly).</li>
+                        <li class="mb-2"><strong>Resolution Downsampling:</strong> High-resolution DICOM radiography (often 2048&times;2048 or higher) is compressed to 224&times;224 for neural network processing, sacrificing fine micro-trabecular details.</li>
+                        <li><strong>Interpretability Caveat:</strong> Grad-CAM highlights coarse regional feature focus, not pathological tissue borders.</li>
+                    </ul>
+                </div>
+
+                <!-- Section 5: Data Privacy & Ethics -->
+                <div class="card border-0 shadow-sm p-4 rounded-3 mb-4 bg-white">
+                    <h4 class="fw-bold text-navy mb-3"><i class="bi bi-shield-check text-teal me-2"></i> 5. Data Privacy &amp; Ethics</h4>
+                    <p class="text-muted mb-0">
+                        MedScan Assist enforces non-retention policies during demo executions. Images uploaded are held in temporary memory solely for the duration of model inference and saliency map creation. No personal identifiable information (PII) or protected health information (PHI) is logged, tracked, or indexed.
+                    </p>
+                </div>
+
+                <!-- Navigation Action -->
+                <div class="text-center mt-5">
+                    <a href="/dashboard" class="btn btn-primary-navy btn-lg px-4 shadow-sm me-2">
+                        <i class="bi bi-speedometer2 me-2"></i> Open Dashboard
+                    </a>
+                    <a href="/" class="btn btn-outline-secondary btn-lg px-4">
+                        <i class="bi bi-house me-2"></i> Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer bg-navy text-white-50 py-4 border-top">
+        <div class="container text-center">
+            <small>&copy; 2026 MedScan Assist &bull; Machine Learning Interpretability Prototype</small>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
