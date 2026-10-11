@@ -29,7 +29,7 @@ werkzeug>=3.0.0
 tqdm>=4.65.0
 
 # Grad-CAM
-pytorch-grad-cam>=1.4.0
+grad-cam>=1.4.0
 
 # Testing
 pytest>=7.4.0
@@ -37,3 +37,4 @@ pytest-cov>=4.1.0
 
 # Optional: DICOM support (uncomment if needed)
 # pydicom>=2.4.0
+
