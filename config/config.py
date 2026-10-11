@@ -13,6 +13,11 @@ import torch
 
 # Base Directory Resolution
 PROJECT_ROOT: str = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+VERCEL_RUNTIME: bool = os.getenv("VERCEL", "").lower() == "1"
+RUNTIME_DATA_DIR: str = (
+    os.path.join(os.getenv("TMPDIR", "/tmp"), "medscan-assist")
+    if VERCEL_RUNTIME else PROJECT_ROOT
+)
 
 # Load environment variables from .env file at project root if present
 load_dotenv(os.path.join(PROJECT_ROOT, ".env"))
@@ -52,9 +57,9 @@ class Config:
     BEST_MODEL_PATH: str = os.path.join(CHECKPOINT_DIR, "best_model.pth")
     LATEST_MODEL_PATH: str = os.path.join(CHECKPOINT_DIR, "latest_checkpoint.pth")
 
-    REPORTS_DIR: str = os.path.join(PROJECT_ROOT, "reports")
-    UPLOADS_DIR: str = os.path.join(PROJECT_ROOT, "uploads")
-    LOGS_DIR: str = os.path.join(PROJECT_ROOT, "logs")
+    REPORTS_DIR: str = os.path.join(RUNTIME_DATA_DIR, "reports")
+    UPLOADS_DIR: str = os.path.join(RUNTIME_DATA_DIR, "uploads")
+    LOGS_DIR: str = os.path.join(RUNTIME_DATA_DIR, "logs")
 
     # Model Architecture Settings
     MODEL_NAME: str = "efficientnet_b0"
@@ -98,9 +103,13 @@ class Config:
     @classmethod
     def ensure_directories(cls) -> None:
         """Create necessary directories if they do not already exist."""
-        for path in [cls.CHECKPOINT_DIR, cls.REPORTS_DIR, cls.UPLOADS_DIR, cls.LOGS_DIR]:
+        paths = [cls.REPORTS_DIR, cls.UPLOADS_DIR, cls.LOGS_DIR]
+        if not VERCEL_RUNTIME:
+            paths.append(cls.CHECKPOINT_DIR)
+        for path in paths:
             os.makedirs(path, exist_ok=True)
 
 
 # Automatically ensure required directories are initialized on import
 Config.ensure_directories()
+
