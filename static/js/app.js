@@ -44,6 +44,23 @@ function setupEventListeners() {
     const resetAnalysisBtn = document.getElementById('resetAnalysisBtn');
     const downloadReportBtn = document.getElementById('downloadReportBtn');
     const refreshMetricsBtn = document.getElementById('refreshMetricsBtn');
+    let sampleZoom = 1;
+    const sampleImage = document.getElementById('sampleImageModalImg');
+    const applySampleZoom = () => {
+        if (sampleImage) sampleImage.style.transform = `scale(${sampleZoom})`;
+    };
+    document.getElementById('sampleZoomIn')?.addEventListener('click', () => {
+        sampleZoom = Math.min(3, sampleZoom + 0.25);
+        applySampleZoom();
+    });
+    document.getElementById('sampleZoomOut')?.addEventListener('click', () => {
+        sampleZoom = Math.max(0.5, sampleZoom - 0.25);
+        applySampleZoom();
+    });
+    document.getElementById('sampleZoomReset')?.addEventListener('click', () => {
+        sampleZoom = 1;
+        applySampleZoom();
+    });
 
     // Trigger file chooser
     if (browseBtn && fileInput) {
@@ -189,10 +206,15 @@ async function checkHealth() {
             const data = await response.json();
             AppState.modelHealth = data;
 
-            const isLoaded = (data.status === 'ok' || data.model_loaded === true);
+            const backendOnline = (data.status === 'online' || data.status === 'ok');
+            const modelReady = (data.model_loaded === true);
             if (dot && text) {
-                dot.className = isLoaded ? 'status-dot status-online' : 'status-dot status-offline';
-                text.textContent = isLoaded ? 'Model Ready' : 'Model Offline';
+                dot.className = modelReady
+                    ? 'status-dot status-online'
+                    : (backendOnline ? 'status-dot status-loading' : 'status-dot status-offline');
+                text.textContent = modelReady
+                    ? 'Model Ready'
+                    : (backendOnline ? 'Model Unavailable' : 'Backend Offline');
             }
 
             if (deviceText && data.device) {
@@ -616,16 +638,14 @@ function renderSampleCards(samples) {
         const thumbnail = sample.thumbnail || sample.path || sample.url || sample;
 
         col.innerHTML = `
-            <div class="sample-img-card p-2 text-center" data-path="${path}">
+            <button type="button" class="sample-img-card p-2 text-center w-100" data-path="${path}" aria-label="View ${label}">
                 <img src="${thumbnail}" alt="${label}" class="img-fluid rounded sample-img-thumb mb-1" onerror="this.src='https://via.placeholder.com/150?text=Chest+X-Ray'">
                 <div class="fw-semibold text-navy x-small text-truncate">${label}</div>
-            </div>
+            </button>
         `;
 
         const card = col.querySelector('.sample-img-card');
-        card.addEventListener('click', () => {
-            selectSampleImage(card, path, label);
-        });
+        card.addEventListener('click', () => openSampleImageViewer(path, label));
 
         container.appendChild(col);
     });
@@ -639,8 +659,8 @@ function renderFallbackSampleCards() {
     if (!container) return;
 
     const fallbackSamples = [
-        { name: 'Normal Sample (Pediatric PA)', path: '/static/samples/normal_sample.jpeg', label: 'Normal Benchmark' },
-        { name: 'Pneumonia Sample (Pediatric AP)', path: '/static/samples/pneumonia_sample.jpeg', label: 'Pneumonia Benchmark' }
+        { name: 'X-ray Normal', path: '/static/images/samples/normal_chest_radiograph.png', label: 'X-ray Normal' },
+        { name: 'X-ray Pneumonia', path: '/static/images/samples/pneumonia_chest_radiograph.png', label: 'X-ray Pneumonia' }
     ];
 
     container.innerHTML = '';
@@ -648,38 +668,30 @@ function renderFallbackSampleCards() {
         const col = document.createElement('div');
         col.className = 'col-6';
         col.innerHTML = `
-            <div class="sample-img-card p-2 text-center" data-path="${sample.path}">
-                <div class="sample-img-thumb rounded d-flex align-items-center justify-content-center bg-dark text-white-50 x-small mb-1">
-                    <i class="bi bi-file-earmark-medical fs-3 text-teal"></i>
-                </div>
+            <button type="button" class="sample-img-card p-2 text-center w-100" data-path="${sample.path}" aria-label="View ${sample.label}">
+                <img src="${sample.path}" alt="${sample.label}" class="img-fluid rounded sample-img-thumb mb-1">
                 <div class="fw-semibold text-navy x-small text-truncate">${sample.label}</div>
-            </div>
+            </button>
         `;
 
         const card = col.querySelector('.sample-img-card');
-        card.addEventListener('click', () => {
-            selectSampleImage(card, sample.path, sample.name);
-        });
+        card.addEventListener('click', () => openSampleImageViewer(sample.path, sample.label));
 
         container.appendChild(col);
     });
 }
 
-/**
- * Select a sample radiograph
- */
-function selectSampleImage(cardEl, path, name) {
-    document.querySelectorAll('.sample-img-card').forEach(c => c.classList.remove('active'));
-    cardEl.classList.add('active');
+/** Open a sample in its own zoomable viewer without changing the upload selection. */
+function openSampleImageViewer(path, label) {
+    const modalEl = document.getElementById('sampleImageModal');
+    const image = document.getElementById('sampleImageModalImg');
+    if (!modalEl || !image || !window.bootstrap?.Modal) return;
 
-    AppState.selectedFile = null;
-    AppState.selectedSampleUrl = path;
-
-    const fileInput = document.getElementById('fileInput');
-    if (fileInput) fileInput.value = '';
-
-    renderImagePreview(path, true, name);
-    showToast(`Loaded sample: ${name}`, 'info');
+    document.getElementById('sampleImageModalLabel').textContent = label;
+    image.src = path;
+    image.alt = label;
+    image.style.transform = 'scale(1)';
+    bootstrap.Modal.getOrCreateInstance(modalEl).show();
 }
 
 /**
@@ -930,3 +942,4 @@ function formatDecimal(val) {
     if (val === undefined || val === null || isNaN(val)) return '--';
     return Number(val).toFixed(3);
 }
+
