@@ -1,0 +1,17 @@
+
+# CPU ML runtime (torch installed separately)
+torchvision
+efficientnet-pytorch
+
+# Images and numerical processing
+numpy
+Pillow
+opencv-python-headless
+
+# Web application
+Flask
+flask-cors
+gunicorn
+python-dotenv
+Jinja2
+Werkzeug
