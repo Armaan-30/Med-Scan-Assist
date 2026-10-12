@@ -54,7 +54,7 @@ class Config:
     TEST_DIR: str = os.path.join(DATA_DIR, "test")
 
     CHECKPOINT_DIR: str = os.path.join(PROJECT_ROOT, "models", "checkpoints")
-    BEST_MODEL_PATH: str = os.path.join(CHECKPOINT_DIR, "best_model.pth")
+    BEST_MODEL_PATH: str = os.getenv("MODEL_PATH", os.path.join(CHECKPOINT_DIR, "best_model.pth"))
     LATEST_MODEL_PATH: str = os.path.join(CHECKPOINT_DIR, "latest_checkpoint.pth")
 
     REPORTS_DIR: str = os.path.join(RUNTIME_DATA_DIR, "reports")
