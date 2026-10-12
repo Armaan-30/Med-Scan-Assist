@@ -82,6 +82,7 @@ MedScan Assist/
 
 The primary dataset used for training is the **Chest X-Ray Images (Pneumonia)** dataset by Kermany et al.:
 - **Kaggle Source:** [https://www.kaggle.com/datasets/paultimothymooney/chest-xray-pneumonia](https://www.kaggle.com/datasets/paultimothymooney/chest-xray-pneumonia)
+- **Deployed Website** [https://med-scan-assist.onrender.com]
 - **Dataset Size:** ~5,863 pediatric chest radiographs (JPEG).
 
 ### Dataset Setup Instructions:
